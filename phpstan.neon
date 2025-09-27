@@ -1,0 +1,17 @@
+includes:
+    - ./vendor/nunomaduro/larastan/extension.neon
+    - ./vendor/nesbot/carbon/extension.neon
+
+parameters:
+    paths:
+        - app
+        - Modules/Auth/app
+    level: 5
+    excludePaths:
+        - ./vendor/*
+        - ./storage/*
+        - ./bootstrap/cache/*
+    ignoreErrors:
+        # Add specific error patterns to ignore here if needed
+    bootstrapFiles:
+        - bootstrap/app.php

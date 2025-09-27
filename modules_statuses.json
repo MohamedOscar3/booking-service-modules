@@ -1,0 +1,7 @@
+{
+    "Auth": true,
+    "Category": true,
+    "Service": true,
+    "AvailabilityManagement": true,
+    "Booking": true
+}

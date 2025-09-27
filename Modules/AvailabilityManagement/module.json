@@ -1,0 +1,11 @@
+{
+    "name": "AvailabilityManagement",
+    "alias": "availabilitymanagement",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AvailabilityManagement\\Providers\\AvailabilityManagementServiceProvider"
+    ],
+    "files": []
+}

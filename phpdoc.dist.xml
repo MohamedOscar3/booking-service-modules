@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpdocumentor
+        configVersion="3"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="https://www.phpdoc.org"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/phpDocumentor/phpDocumentor/master/data/xsd/phpdoc.xsd"
+>
+    <paths>
+        <output>docs/api</output>
+        <cache>build/cache</cache>
+    </paths>
+    <version number="latest">
+        <api>
+            <source dsn=".">
+                <path>app</path>
+                <path>Modules/Auth/app</path>
+                <path>Modules/AvailabilityManagement/app</path>
+                <path>Modules/ServiceManagement/app</path>
+                <path>Modules/Category/app</path>
+                <path>Modules/Booking/app</path>
+            </source>
+            <ignore>
+                <path>vendor/**/*</path>
+                <path>tests/**/*</path>
+                <path>storage/**/*</path>
+                <path>bootstrap/**/*</path>
+                <path>config/**/*</path>
+                <path>database/**/*</path>
+                <path>public/**/*</path>
+                <path>resources/**/*</path>
+                <path>routes/**/*</path>
+            </ignore>
+            <extensions>
+                <extension>php</extension>
+            </extensions>
+            <visibility>public</visibility>
+            <default-package-name>ServiceBooking</default-package-name>
+        </api>
+    </version>
+    <template name="default" />
+    <setting name="graphs.enabled" value="true"/>
+    <setting name="guides.enabled" value="true"/>
+</phpdocumentor>
