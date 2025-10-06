@@ -38,6 +38,8 @@ class AvailabilityManagementService
             if ($request->has('provider_id')) {
                 $query->where('provider_id', $request->input('provider_id'));
             }
+        } else {
+            abort(403, 'Unauthorized action.');
         }
 
         // Filter by type
@@ -116,7 +118,13 @@ class AvailabilityManagementService
     public function updateAvailabilitySlot(AvailabilityManagement $availability, UpdateAvailabilityManagementDTO $availabilityDto): AvailabilityManagement
     {
         try {
-            $availability->update($availabilityDto->toArray());
+            $data = $availabilityDto->toArray();
+
+            foreach ($data as $key => $value) {
+                $availability->{$key} = $value;
+            }
+
+            $availability->save();
 
             $this->loggingService->log('Availability slot updated', [
                 'availability_id' => $availability->id,
@@ -124,6 +132,8 @@ class AvailabilityManagementService
                 'type' => $availability->type->value,
                 'from' => $availability->from,
                 'to' => $availability->to,
+                'status' => $availability->status,
+                'week_day' => $availability->week_day,
                 'user_id' => Auth::id(),
             ]);
 

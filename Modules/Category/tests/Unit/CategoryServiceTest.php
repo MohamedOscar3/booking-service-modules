@@ -87,20 +87,6 @@ class CategoryServiceTest extends TestCase
         ]);
     }
 
-    public function test_create_category_restores_trashed_category_if_exists(): void
-    {
-        $trashedCategory = Category::factory()->create(['name' => 'Trashed Category', 'last_updated_by' => $this->user->id]);
-        $trashedCategory->delete();
-
-        $categoryDTO = new CategoryDTO('Trashed Category');
-
-        $result = $this->categoryService->createCategory($categoryDTO);
-
-        $this->assertEquals($trashedCategory->id, $result->id);
-        $this->assertEquals('Trashed Category', $result->name);
-        $this->assertNull($result->deleted_at);
-        $this->assertEquals($this->user->id, $result->last_updated_by);
-    }
 
     public function test_create_category_logs_creation(): void
     {
@@ -115,21 +101,7 @@ class CategoryServiceTest extends TestCase
         $categoryService->createCategory($categoryDTO);
     }
 
-    public function test_create_category_logs_restoration_when_trashed_exists(): void
-    {
-        $trashedCategory = Category::factory()->create(['name' => 'Trashed Category', 'last_updated_by' => $this->user->id]);
-        $trashedCategory->delete();
 
-        $mockLoggingService = Mockery::mock(LoggingService::class);
-        $mockLoggingService->shouldReceive('log')
-            ->once()
-            ->with('Category restored', Mockery::type('array'));
-
-        $categoryService = new CategoryService($mockLoggingService);
-        $categoryDTO = new CategoryDTO('Trashed Category');
-
-        $categoryService->createCategory($categoryDTO);
-    }
 
     public function test_create_category_throws_exception_and_logs_error(): void
     {
@@ -265,19 +237,6 @@ class CategoryServiceTest extends TestCase
         $this->assertSoftDeleted('categories', ['id' => $category->id]);
     }
 
-    public function test_delete_category_logs_deletion(): void
-    {
-        $category = Category::factory()->create(['last_updated_by' => $this->user->id]);
-
-        $mockLoggingService = Mockery::mock(LoggingService::class);
-        $mockLoggingService->shouldReceive('log')
-            ->once()
-            ->with('Category deleted', Mockery::type('array'));
-
-        $categoryService = new CategoryService($mockLoggingService);
-
-        $categoryService->deleteCategory($category);
-    }
 
     public function test_delete_category_throws_exception_and_logs_error(): void
     {

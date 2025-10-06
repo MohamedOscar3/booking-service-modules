@@ -17,7 +17,9 @@ class AvailabilityManagementControllerTest extends TestCase
     use RefreshDatabase, WithFaker;
 
     private User $provider;
+
     private User $admin;
+
     private User $user;
 
     protected function setUp(): void
@@ -189,8 +191,8 @@ class AvailabilityManagementControllerTest extends TestCase
     {
         $availabilityData = AvailabilityManagement::factory()->make([
             'type' => 'once',
-            'from'=> Carbon::now()->addDay(),
-            'to'=> Carbon::now()->addDays(2),
+            'from' => Carbon::now()->addDay(),
+            'to' => Carbon::now()->addDays(2),
         ])->toArray();
 
         $response = $this->postJson('/api/availability-management', $availabilityData);
@@ -212,7 +214,6 @@ class AvailabilityManagementControllerTest extends TestCase
                     'provider',
                 ],
             ]);
-
 
     }
 
@@ -293,6 +294,8 @@ class AvailabilityManagementControllerTest extends TestCase
         $updateData = [
             'type' => 'once',
             'week_day' => null,
+            'from' => Carbon::now()->addDay(),
+            'to' => Carbon::now()->addDays(2),
             'status' => false,
         ];
 
@@ -352,6 +355,7 @@ class AvailabilityManagementControllerTest extends TestCase
         $availability = AvailabilityManagement::factory()->create(['provider_id' => $otherProvider->id]);
 
         $response = $this->deleteJson("/api/availability-management/{$availability->id}");
+
 
         $response->assertStatus(403); // Forbidden
     }

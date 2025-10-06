@@ -86,6 +86,22 @@ class UpdateBookingRequest extends FormRequest
         // Customer notes (customers can update their own notes)
         if ($user->role === Roles::USER && $booking->user_id === $user->id) {
             $rules['customer_notes'] = ['sometimes', 'nullable', 'string', 'max:1000'];
+
+            // Prevent clients from updating restricted fields
+            if ($this->has('status')) {
+                $rules['status'] = ['prohibited'];
+            }
+            if ($this->has('provider_notes')) {
+                $rules['provider_notes'] = ['prohibited'];
+            }
+            if ($this->has('price')) {
+                $rules['price'] = ['prohibited'];
+            }
+        }
+
+        // Providers can update price
+        if ($user->role === Roles::PROVIDER) {
+            $rules['price'] = ['sometimes', 'numeric', 'min:0'];
         }
 
         // Admins can update any field
@@ -104,10 +120,13 @@ class UpdateBookingRequest extends FormRequest
     {
         return [
             'status.string' => 'Status must be a valid string.',
+            'status.prohibited' => 'You are not authorized to update the status.',
             'provider_notes.max' => 'Provider notes cannot exceed 1000 characters.',
+            'provider_notes.prohibited' => 'You are not authorized to update provider notes.',
             'customer_notes.max' => 'Customer notes cannot exceed 1000 characters.',
             'price.numeric' => 'Price must be a valid number.',
             'price.min' => 'Price cannot be negative.',
+            'price.prohibited' => 'You are not authorized to update the price.',
         ];
     }
 

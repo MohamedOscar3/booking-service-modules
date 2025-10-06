@@ -42,4 +42,17 @@ class UpdateCategoryRequest extends FormRequest
     {
         return true;
     }
+
+    /**
+     * Get the body parameters for the API documentation.
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'name' => [
+                'description' => 'Category name. Must be unique and maximum 255 characters',
+                'example' => 'Updated Hair & Beauty',
+            ],
+        ];
+    }
 }

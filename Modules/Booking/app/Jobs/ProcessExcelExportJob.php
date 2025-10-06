@@ -3,7 +3,6 @@
 namespace Modules\Booking\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Http\Request;
 use Illuminate\Queue\InteractsWithQueue;
@@ -17,7 +16,7 @@ use Modules\Booking\Exports\ProviderBookingsExport;
 use Modules\Booking\Exports\ServiceBookingRatesExport;
 use Modules\Booking\Mail\ExportCompletedMail;
 
-class ProcessExcelExportJob implements ShouldQueue
+class ProcessExcelExportJob
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -52,9 +51,9 @@ class ProcessExcelExportJob implements ShouldQueue
             // Generate and store the Excel file
             Excel::store($exportClass, $filePath, 'local');
 
-            // Send email notification with download link
+            // Send email notification with attached file
             Mail::to($this->user->email)->send(
-                new ExportCompletedMail($this->user, $this->exportType, $this->filename)
+                new ExportCompletedMail($this->user, $this->exportType, $this->filename, $filePath)
             );
 
         } catch (\Exception $e) {
@@ -74,11 +73,13 @@ class ProcessExcelExportJob implements ShouldQueue
 
     protected function getExportClass(Request $request)
     {
+        $reportService = app(\Modules\Booking\Services\AdminReportService::class);
+
         return match ($this->exportType) {
-            'provider-bookings' => new ProviderBookingsExport($request),
-            'service-booking-rates' => new ServiceBookingRatesExport($request),
-            'peak-hours' => new PeakHoursExport($request),
-            'customer-booking-duration' => new CustomerBookingDurationExport($request),
+            'provider-bookings' => new ProviderBookingsExport($request, $reportService),
+            'service-booking-rates' => new ServiceBookingRatesExport($request, $reportService),
+            'peak-hours' => new PeakHoursExport($request, $reportService),
+            'customer-booking-duration' => new CustomerBookingDurationExport($request, $reportService),
             default => throw new \InvalidArgumentException('Invalid export type: '.$this->exportType),
         };
     }

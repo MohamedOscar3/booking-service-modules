@@ -26,40 +26,31 @@ class SlotService
      * Get available time slots for a specific date and service
      *
      * @param string $timezone User's timezone
-     * @param Carbon|string|null $from Date to get slots for
+     * @param Carbon|string|null $from Date to get slots for (expected in user timezone)
      * @return array Available time slots
      */
     protected function getSlots(string $timezone = 'UTC', $from = null): array
     {
-        // Ensure $from is a Carbon instance
         if (! ($from instanceof Carbon)) {
-            $from = Carbon::parse($from)->timezone($timezone);
+            $from = Carbon::parse($from, $timezone);
         }
 
-        // Convert to UTC for database operations
-        $fromUtc = $this->timezoneService->convertToTimezone($from, $timezone);
-        // Get day of week (0-6)
-        $fromDay = $fromUtc->weekday();
+        $fromUtc = $from->copy()->utc();
+        $fromDay = $from->weekday();
+        $currentTimeInUserTz = Carbon::now($timezone);
 
-        // Get current time in H:i format
-        $currentTime = Carbon::now($timezone)->format('H:i');
-
-        // Get regular slots for this day of week
         $slots = AvailabilityManagement::where('week_day', $fromDay)
             ->where('provider_id', $this->service->provider_id)
             ->get();
 
-        // OneTime Slots - these are additional available slots
         $oneTimeSlots = AvailabilityManagement::where('type', SlotType::once)
             ->where('provider_id', $this->service->provider_id)
-            ->where('status', 1) // Status 1 means available
+            ->where('status', 1)
             ->whereDate('from', $fromUtc->format('Y-m-d'))
             ->get();
 
-        // Add OneTime Slots to regular slots
         $availableSlots = $slots->merge($oneTimeSlots);
 
-        // Find the earliest and latest available times
         $earliestTime = null;
         $latestTime = null;
 
@@ -76,50 +67,58 @@ class SlotService
             }
         }
 
-        // If no slots available, return empty array
         if ($earliestTime === null || $latestTime === null) {
             return [];
         }
 
-        // Generate all possible time slots for the day based on service duration
         $allDaysSlots = [];
 
         foreach ($availableSlots as $slot) {
-            $timeSlots = CarbonPeriod::create(
-                Carbon::parse($slot->from),
-                $this->service->duration.' minutes',
-                Carbon::parse($slot->to)
-            );
+            $slotFrom = Carbon::parse($slot->from);
+            $slotTo = Carbon::parse($slot->to);
 
-            foreach ($timeSlots as $t) {
-                $allDaysSlots[] = $t->format('H:i');
+            $availableMinutes = $slotFrom->diffInMinutes($slotTo);
+
+            if ($availableMinutes < $this->service->duration) {
+                continue;
+            }
+
+            $lastPossibleStart = $slotTo->copy()->subMinutes($this->service->duration);
+
+            $currentTime = $slotFrom->copy();
+            while ($currentTime->lte($lastPossibleStart)) {
+                $allDaysSlots[] = $currentTime->format('H:i');
+                $currentTime->addMinutes($this->service->duration);
             }
         }
 
-        // Get non-working blocks (status 0 means unavailable)
         $nonWorkingBlocks = AvailabilityManagement::where('type', SlotType::once)
             ->where('provider_id', $this->service->provider_id)
             ->where('status', 0)
             ->whereDate('from', $fromUtc->format('Y-m-d'))
             ->get();
 
-        // Get bookings for this user on this date
-        $bookedSlotsForUser = Booking::whereNotIn('status', [BookingStatusEnum::CANCELLED])
+        $dayStart = $from->copy()->startOfDay()->utc();
+        $dayEnd = $from->copy()->endOfDay()->utc();
+
+        $bookedSlotsForUser = Booking::with('service')
+            ->whereNotIn('status', [BookingStatusEnum::CANCELLED])
             ->where('user_id', auth()->id())
-            ->whereDate('date', $fromUtc->format('Y-m-d'))
+            ->where(function ($query) use ($dayStart, $dayEnd) {
+                $query->whereBetween('date', [$dayStart->subMinute()->format('Y-m-d H:i'), $dayEnd->addMinute()->format('Y-m-d H:i')]);
+            })
             ->get();
 
-        // Get bookings for this provider on this date
-        $bookedSlotsForProvider = Booking::whereNotIn('status', [BookingStatusEnum::CANCELLED])
+        $bookedSlotsForProvider = Booking::with('service')
+            ->whereNotIn('status', [BookingStatusEnum::CANCELLED])
             ->where('provider_id', $this->service->provider_id)
-            ->where('service_id', $this->service->id)
-            ->whereDate('date', $fromUtc->format('Y-m-d'))
+            ->where(function ($query) use ($dayStart, $dayEnd) {
+                $query->whereBetween('date', [$dayStart->subMinute()->format('Y-m-d H:i'), $dayEnd->addMinute()->format('Y-m-d H:i')]);
+            })
             ->get();
 
-        // Collect all non-available periods
         $nonAvailablePeriods = [];
 
-        // Add non-working blocks to non-available periods
         foreach ($nonWorkingBlocks as $block) {
             $nonAvailablePeriods[] = [
                 'from' => Carbon::parse($block->from),
@@ -127,48 +126,40 @@ class SlotService
             ];
         }
 
-        // Add user bookings to non-available periods
         foreach ($bookedSlotsForUser as $booking) {
-            $bookingFrom = Carbon::parse($booking->date);
-            $bookingTo = (clone $bookingFrom)->addMinutes($this->service->duration);
+            $bookingFrom = Carbon::parse($booking->date, 'UTC')->setTimezone($timezone);
+            $bookingTo = $bookingFrom->copy()->addMinutes($booking->service->duration); // Removed +1 minute
 
-            $nonAvailablePeriods[] = [
-                'from' => $bookingFrom,
-                'to' => $bookingTo,
-            ];
+            if ($bookingFrom->isSameDay($from) || $bookingTo->isSameDay($from)) {
+                $nonAvailablePeriods[] = [
+                    'from' => $bookingFrom,
+                    'to' => $bookingTo,
+                ];
+            }
         }
 
-        // Add provider bookings to non-available periods
         foreach ($bookedSlotsForProvider as $booking) {
-            $bookingFrom = Carbon::parse($booking->date);
-            $bookingTo = (clone $bookingFrom)->addMinutes($this->service->duration);
+            $bookingFrom = Carbon::parse($booking->date, 'UTC')->setTimezone($timezone);
+            $bookingTo = $bookingFrom->copy()->addMinutes($booking->service->duration); // Removed +1 minute
 
-            $nonAvailablePeriods[] = [
-                'from' => $bookingFrom,
-                'to' => $bookingTo,
-            ];
+            if ($bookingFrom->isSameDay($from) || $bookingTo->isSameDay($from)) {
+                $nonAvailablePeriods[] = [
+                    'from' => $bookingFrom,
+                    'to' => $bookingTo,
+                ];
+            }
         }
 
-        // Filter available slots
-        $availableTimeSlots = collect($allDaysSlots)->filter(function ($slot) use ($nonAvailablePeriods, $currentTime, $fromUtc) {
-            // Create a full datetime for the slot
-            $slotTime = Carbon::parse($fromUtc->format('Y-m-d').' '.$slot);
-            $slotEndTime = (clone $slotTime)->addMinutes($this->service->duration);
+        $availableTimeSlots = collect($allDaysSlots)->unique()->filter(function ($slot) use ($nonAvailablePeriods, $currentTimeInUserTz, $from, $timezone) {
+            $slotTime = Carbon::parse($from->format('Y-m-d').' '.$slot, $timezone);
+            $slotEndTime = $slotTime->copy()->addMinutes($this->service->duration);
 
-            // Check if slot is in the past
-            if ($fromUtc->format('Y-m-d') == Carbon::now()->format('Y-m-d') && $slot < $currentTime) {
+            if ($from->isSameDay($currentTimeInUserTz) && $slotTime->lt($currentTimeInUserTz)) {
                 return false;
             }
 
-            // Check if slot falls within any non-available period
             foreach ($nonAvailablePeriods as $period) {
-                // Check for any overlap between the slot time range and the non-available period
-                if (
-                    ($slotTime->between($period['from'], $period['to'])) ||
-                    ($slotEndTime->between($period['from'], $period['to'])) ||
-                    ($period['from']->between($slotTime, $slotEndTime)) ||
-                    ($period['to']->between($slotTime, $slotEndTime))
-                ) {
+                if ($slotTime->lt($period['to']) && $slotEndTime->gt($period['from'])) {
                     return false;
                 }
             }
@@ -181,11 +172,11 @@ class SlotService
 
     public function getAvailableSlots(int $serviceId, string $timezone = 'UTC', $date = null): array
     {
-        // Convert the date to a Carbon instance in the user's timezone\
-        if ($date != null) {
-            $from = Carbon::parse($date)->timezone($timezone);
+        // Convert the date to a Carbon instance in the user's timezone
+        if ($date !== null) {
+            $from = Carbon::parse($date, $timezone);
         } else {
-            $from = Carbon::now()->timezone($timezone);
+            $from = Carbon::now($timezone);
         }
 
         // Get the service
@@ -194,7 +185,8 @@ class SlotService
 
         $slots = [];
         foreach ($nextWeekRange as $day) {
-            $slots[$day->format('Y-m-d')] = $this->getSlots($timezone, $day->format('Y-m-d'));
+            // Pass the Carbon instance directly to maintain timezone context
+            $slots[$day->format('Y-m-d')] = $this->getSlots($timezone, $day);
         }
 
         return $slots;

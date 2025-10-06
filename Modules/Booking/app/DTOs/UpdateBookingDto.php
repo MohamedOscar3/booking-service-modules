@@ -12,6 +12,8 @@ use Modules\Booking\Enums\BookingStatusEnum;
  * @property float|null $price
  * @property string|null $service_description
  * @property int|null $service_id
+ * @property string|null $provider_notes
+ * @property string|null $customer_notes
  */
 class UpdateBookingDto
 {
@@ -23,6 +25,8 @@ class UpdateBookingDto
         public ?float $price = null,
         public ?string $service_description = null,
         public ?int $service_id = null,
+        public ?string $provider_notes = null,
+        public ?string $customer_notes = null,
     ) {}
 
     public static function from(array $data): self
@@ -42,6 +46,8 @@ class UpdateBookingDto
             isset($data['price']) ? (float) $data['price'] : null,
             $data['service_description'] ?? null,
             isset($data['service_id']) ? (int) $data['service_id'] : null,
+            $data['provider_notes'] ?? null,
+            $data['customer_notes'] ?? null,
         );
     }
 
@@ -55,6 +61,8 @@ class UpdateBookingDto
             'price' => $this->price,
             'service_description' => $this->service_description,
             'service_id' => $this->service_id,
+            'provider_notes' => $this->provider_notes,
+            'customer_notes' => $this->customer_notes,
         ], fn ($value) => $value !== null);
     }
 }
