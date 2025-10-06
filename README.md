@@ -17,11 +17,14 @@ A comprehensive service booking management system built with Laravel 12 using a 
 - **API Documentation**: Auto-generated documentation with Scribe
 - **Modular Architecture**: Clean, maintainable code structure using Laravel Modules
 - **Export System**: Excel exports with queue processing for large datasets
+- **Docker Support**: Fully containerized development environment
 
 ## 📋 Table of Contents
 
 - [Project Structure](#-project-structure)
 - [Installation](#-installation)
+  - [Local Installation](#local-installation)
+  - [Docker Installation](#docker-installation-recommended)
 - [Configuration](#-configuration)
 - [Modules Overview](#-modules-overview)
 - [Adding New Modules](#-adding-new-modules)
@@ -29,6 +32,7 @@ A comprehensive service booking management system built with Laravel 12 using a 
 - [PHPDoc Generation](#-phpdoc-generation)
 - [Code Quality](#-code-quality)
 - [Testing](#-testing)
+- [Docker Usage](#-docker-usage)
 - [Contributing](#-contributing)
 
 ## 🏗️ Project Structure
@@ -45,6 +49,10 @@ service_booking/
 │   ├── Booking/                  # Booking system and admin reports
 │   ├── Category/                 # Service categories
 │   └── Service/                  # Service management
+├── docker/                       # Docker configuration
+│   ├── nginx/                    # Nginx configuration
+│   ├── php/                      # PHP-FPM configuration
+│   └── supervisor/               # Supervisor configuration
 ├── config/                       # Configuration files
 ├── database/                     # Database migrations and seeders
 ├── resources/                    # Views and assets
@@ -85,21 +93,23 @@ Modules/{ModuleName}/
 
 ## 🚀 Installation
 
-### Prerequisites
+### Local Installation
+
+#### Prerequisites
 
 - PHP 8.3 or higher
 - Composer
 - MySQL 8.0 or higher
 - Node.js & NPM (for frontend assets)
 
-### Step 1: Clone Repository
+#### Step 1: Clone Repository
 
 ```bash
 git clone https://github.com/your-repo/service_booking.git
 cd service_booking
 ```
 
-### Step 2: Install Dependencies
+#### Step 2: Install Dependencies
 
 ```bash
 # Install PHP dependencies
@@ -109,7 +119,7 @@ composer install
 npm install
 ```
 
-### Step 3: Environment Configuration
+#### Step 3: Environment Configuration
 
 ```bash
 # Copy environment file
@@ -119,7 +129,7 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-### Step 4: Database Setup
+#### Step 4: Database Setup
 
 ```bash
 # Configure your database in .env file
@@ -137,7 +147,7 @@ php artisan migrate
 php artisan db:seed
 ```
 
-### Step 5: Additional Configuration
+#### Step 5: Additional Configuration
 
 ```bash
 # Generate Sanctum secret key
@@ -149,7 +159,7 @@ php artisan cache:clear
 php artisan route:clear
 ```
 
-### Step 6: Start Development Server
+#### Step 6: Start Development Server
 
 ```bash
 # Start Laravel development server
@@ -158,6 +168,48 @@ php artisan serve
 # In another terminal, start asset compilation
 npm run dev
 ```
+
+### Docker Installation (Recommended)
+
+The project includes a complete Docker setup with the following services:
+
+- **Laravel App** - PHP 8.3-FPM with Supervisor (runs queue workers and scheduler)
+- **Nginx** - Web server (accessible on port 8000)
+- **MySQL** - Main database server (port 3306)
+- **MySQL Test** - Test database server (port 3307)
+- **Redis** - Cache and queue driver (port 6379)
+- **MailHog** - Email testing tool (SMTP: 1025, Web UI: 8025)
+
+#### Quick Start with Docker
+
+```bash
+# 1. Copy environment file
+cp .env.example .env
+
+# 2. Build and start all containers
+docker-compose up -d --build
+
+# 3. Install Composer dependencies
+docker-compose exec app composer install
+
+# 4. Generate application key
+docker-compose exec app php artisan key:generate
+
+# 5. Run migrations
+docker-compose exec app php artisan migrate
+
+# 6. (Optional) Seed database
+docker-compose exec app php artisan db:seed
+```
+
+#### Access Your Application
+
+- **Laravel Application**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+- **PHP Documentation**: http://localhost:8000/developer-docs/php
+- **MailHog UI**: http://localhost:8000/mailhog (Username: `admin`, Password: `mailhog123`)
+- **MySQL (Main)**: localhost:3308
+- **MySQL (Test)**: localhost:3307
 
 ## ⚙️ Configuration
 
@@ -174,18 +226,23 @@ SANCTUM_STATEFUL_DOMAINS=localhost,127.0.0.1,::1
 For background job processing (Excel exports):
 
 ```env
-QUEUE_CONNECTION=database
+QUEUE_CONNECTION=redis  # when using Docker
+# or
+QUEUE_CONNECTION=database  # for local setup
 ```
 
 Run the queue worker:
 ```bash
+# Local
 php artisan queue:work
+
+# Docker
+docker-compose exec app supervisorctl status
 ```
 
 ### Mail Configuration
 
-For export notifications:
-
+**Local Setup:**
 ```env
 MAIL_MAILER=smtp
 MAIL_HOST=your-smtp-host
@@ -193,6 +250,51 @@ MAIL_PORT=587
 MAIL_USERNAME=your-username
 MAIL_PASSWORD=your-password
 MAIL_ENCRYPTION=tls
+```
+
+**Docker Setup:**
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=mailhog
+MAIL_PORT=1025
+```
+
+Access MailHog UI at http://localhost:8000/mailhog to view sent emails. (Username: `admin`, Password: `mailhog123`)
+
+### Database Configuration
+
+**Local Setup:**
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=service_booking
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+```
+
+**Docker Setup:**
+```env
+# Main Database
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=service_booking
+DB_USERNAME=service_booking
+DB_PASSWORD=secret
+
+# Test Database
+DB_TEST_CONNECTION=mysql
+DB_TEST_HOST=mysql_test
+DB_TEST_PORT=3306
+DB_TEST_DATABASE=service_booking_test
+DB_TEST_USERNAME=service_booking_test
+DB_TEST_PASSWORD=secret
+
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+CACHE_STORE=redis
 ```
 
 ## 📦 Modules Overview
@@ -309,15 +411,18 @@ Route::prefix('api')->middleware('auth:sanctum')->group(function () {
 ### Generate Documentation
 
 ```bash
-# Generate API documentation with Scribe
+# Local
 php artisan scribe:generate
+
+# Docker
+docker-compose exec app php artisan scribe:generate
 ```
 
 ### View Documentation
 
-- **HTML Documentation**: http://your-app-url/docs
-- **Postman Collection**: http://your-app-url/docs.postman
-- **OpenAPI Specification**: http://your-app-url/docs.openapi
+- **HTML Documentation**: http://localhost:8000/docs
+- **Postman Collection**: http://localhost:8000/docs.postman
+- **OpenAPI Specification**: http://localhost:8000/docs.openapi
 
 ### Documentation Configuration
 
@@ -381,54 +486,51 @@ composer install
 ### Generate PHPDoc
 
 ```bash
-# Generate documentation for the entire project
+# Local
 vendor/bin/phpdoc
+
+# Docker
+docker-compose exec app phpdoc
 
 # Generate documentation for specific modules
 vendor/bin/phpdoc -d Modules/ModuleName -t docs/api/ModuleName
 ```
 
+### View PHPDoc
+
+- **PHP Documentation**: http://localhost:8000/developer-docs/php
+
 ### PHPDoc Configuration
 
-Create `phpdoc.xml` in project root:
-
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<phpdocumentor>
-    <title>Service Booking API</title>
-    <paths>
-        <output>docs/api</output>
-    </paths>
-    <version number="1.0.0">
-        <folder>app</folder>
-        <folder>Modules</folder>
-    </version>
-</phpdocumentor>
-```
+The `phpdoc.xml` configuration is included in the project root.
 
 ## 🧪 Code Quality
 
 ### Laravel Pint (Code Formatting)
 
 ```bash
-# Format code according to Laravel standards
+# Local
 composer format
 # or
 vendor/bin/pint
 
+# Docker
+docker-compose exec app vendor/bin/pint
+
 # Check formatting without making changes
-composer format:check
-# or
 vendor/bin/pint --test
 ```
 
 ### Larastan (Static Analysis)
 
 ```bash
-# Run static analysis
+# Local
 composer analyse
 # or
 vendor/bin/phpstan analyse
+
+# Docker
+docker-compose exec app vendor/bin/phpstan analyse
 
 # Run with specific level (0-9)
 vendor/bin/phpstan analyse --level=5
@@ -444,8 +546,11 @@ vendor/bin/phpstan analyse --level=5
 ### Run Tests
 
 ```bash
-# Run all tests
+# Local
 php artisan test
+
+# Docker
+docker-compose exec app php artisan test
 
 # Run specific test file
 php artisan test tests/Feature/ExampleTest.php
@@ -467,6 +572,152 @@ php artisan make:test --feature Modules/ModuleName/BookingTest
 
 # Create a unit test
 php artisan make:test --unit Modules/ModuleName/Services/BookingServiceTest
+```
+
+## 🐳 Docker Usage
+
+### Container Management
+
+```bash
+# Start containers
+docker-compose up -d
+
+# Stop containers
+docker-compose down
+
+# View logs
+docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f app
+docker-compose logs -f nginx
+```
+
+### Application Commands
+
+```bash
+# Run Artisan commands
+docker-compose exec app php artisan [command]
+
+# Access container shell
+docker-compose exec app bash
+
+# Run Composer
+docker-compose exec app composer [command]
+
+# Run migrations
+docker-compose exec app php artisan migrate
+
+# Generate documentation
+docker-compose exec app php artisan scribe:generate
+docker-compose exec app phpdoc
+
+# Clear cache
+docker-compose exec app php artisan cache:clear
+docker-compose exec app php artisan config:clear
+docker-compose exec app php artisan view:clear
+```
+
+### Queue Management
+
+Queue workers are managed by Supervisor and run automatically inside the app container:
+
+```bash
+# View supervisor status
+docker-compose exec app supervisorctl status
+
+# Restart workers
+docker-compose exec app supervisorctl restart all
+
+# View worker logs
+docker-compose exec app tail -f /var/www/storage/logs/worker.log
+
+# View scheduler logs
+docker-compose exec app tail -f /var/www/storage/logs/scheduler.log
+```
+
+### Database Access
+
+**Using Docker:**
+```bash
+# Access main database MySQL CLI
+docker-compose exec mysql mysql -u service_booking -psecret service_booking
+
+# Access test database MySQL CLI
+docker-compose exec mysql_test mysql -u service_booking_test -psecret service_booking_test
+```
+
+**Using External Tools:**
+
+Main Database:
+- **Host**: localhost
+- **Port**: 3308
+- **Database**: service_booking
+- **Username**: service_booking
+- **Password**: secret
+
+Test Database:
+- **Host**: localhost
+- **Port**: 3307
+- **Database**: service_booking_test
+- **Username**: service_booking_test
+- **Password**: secret
+
+### File Permissions
+
+If you encounter permission issues:
+
+```bash
+docker-compose exec app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+docker-compose exec app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+```
+
+### Rebuilding Containers
+
+If you make changes to Dockerfile or need to rebuild:
+
+```bash
+docker-compose down
+docker-compose up -d --build
+```
+
+### Troubleshooting
+
+**Container won't start:**
+```bash
+# Check logs
+docker-compose logs [service-name]
+
+# Restart specific service
+docker-compose restart [service-name]
+```
+
+**Database connection failed:**
+```bash
+# Ensure MySQL is ready
+docker-compose exec mysql mysqladmin ping -h localhost
+
+# Check database exists
+docker-compose exec mysql mysql -u root -psecret -e "SHOW DATABASES;"
+```
+
+**Permission denied errors:**
+```bash
+# Fix storage permissions
+docker-compose exec app chmod -R 775 storage bootstrap/cache
+docker-compose exec app chown -R www-data:www-data storage bootstrap/cache
+```
+
+**Queue not processing:**
+```bash
+# Check supervisor status
+docker-compose exec app supervisorctl status
+
+# Restart queue workers
+docker-compose exec app supervisorctl restart laravel-worker:*
+
+# Check if supervisor is running
+docker-compose exec app ps aux | grep supervisor
 ```
 
 ## 🔧 Development Commands
@@ -527,7 +778,6 @@ php artisan module:make-migration create_table_name ModuleName
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-
 ## 🚀 Deployment
 
 ### Production Checklist
@@ -561,4 +811,29 @@ REDIS_HOST=your-redis-host
 # Mail
 MAIL_MAILER=smtp
 MAIL_HOST=your-smtp-host
+```
+
+### Production Considerations for Docker
+
+Before deploying to production:
+
+1. Change all default passwords (database, MailHog)
+2. Use proper SSL certificates for Nginx
+3. Set appropriate PHP memory limits and timeouts
+4. Configure MySQL for production workloads
+5. Use Redis password authentication
+6. Disable MailHog (use real SMTP service)
+7. Remove or secure the test database
+
+### Changing MailHog Password
+
+To change the MailHog basic auth password:
+
+```bash
+# Generate new password hash
+docker run --rm httpd:alpine htpasswd -nb admin your_new_password
+
+# Update docker/nginx/.htpasswd with the output
+# Then restart nginx
+docker-compose restart nginx
 ```

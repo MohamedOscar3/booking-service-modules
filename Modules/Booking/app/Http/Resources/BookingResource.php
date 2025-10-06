@@ -18,6 +18,8 @@ class BookingResource extends JsonResource
             'status' => $this->status,
             'price' => $this->price,
             'service_description' => $this->service_description,
+            'customer_notes' => $this->customer_notes,
+            'provider_notes' => $this->provider_notes,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
 

@@ -124,7 +124,7 @@
                 <div class="detail-row">
                     <span class="detail-label">Status:</span>
                     <span class="detail-value">
-                        <span class="status {{ strtolower($booking->status) }}">{{ $booking->status }}</span>
+                        <span class="status {{ $booking->status->value }}">{{ $booking->status->label() }}</span>
                     </span>
                 </div>
                 @if($booking->customer_notes)

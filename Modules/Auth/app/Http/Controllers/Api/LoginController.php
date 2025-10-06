@@ -29,7 +29,7 @@ class LoginController
      * Login a user
      *
      * @throws \Exception
-     *
+     * @unauthenticated
      * @bodyParam email string required User email. Example: john@example.com
      * @bodyParam password string required User password. Example: Password@123
      *

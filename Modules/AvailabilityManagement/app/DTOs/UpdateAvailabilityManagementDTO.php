@@ -29,7 +29,7 @@ class UpdateAvailabilityManagementDTO
         return new self(
             isset($data['provider_id']) ? (int) $data['provider_id'] : null,
             isset($data['type']) ? SlotType::from($data['type']) : null,
-            isset($data['week_day']) ? (int) $data['week_day'] : null,
+            array_key_exists('week_day', $data) ? (isset($data['week_day']) ? (int) $data['week_day'] : null) : null,
             $data['from'] ?? null,
             $data['to'] ?? null,
             isset($data['status']) ? (bool) $data['status'] : null,
@@ -38,13 +38,34 @@ class UpdateAvailabilityManagementDTO
 
     public function toArray(): array
     {
-        return array_filter([
-            'provider_id' => $this->provider_id,
-            'type' => $this->type?->value,
-            'week_day' => $this->week_day,
-            'from' => $this->from,
-            'to' => $this->to,
-            'status' => $this->status,
-        ], fn ($value) => $value !== null);
+        $data = [];
+
+        if ($this->provider_id !== null) {
+            $data['provider_id'] = $this->provider_id;
+        }
+
+        if ($this->type !== null) {
+            $data['type'] = $this->type->value;
+        }
+
+        if ($this->type === SlotType::once) {
+            $data['week_day'] = null;
+        } elseif ($this->week_day !== null) {
+            $data['week_day'] = $this->week_day;
+        }
+
+        if ($this->from !== null) {
+            $data['from'] = $this->from;
+        }
+
+        if ($this->to !== null) {
+            $data['to'] = $this->to;
+        }
+
+        if ($this->status !== null) {
+            $data['status'] = $this->status;
+        }
+
+        return $data;
     }
 }

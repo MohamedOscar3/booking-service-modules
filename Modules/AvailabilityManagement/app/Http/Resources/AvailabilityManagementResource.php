@@ -16,10 +16,10 @@ class AvailabilityManagementResource extends JsonResource
     {
         $timeZoneService = app(TimezoneService::class);
 
-        $this->from = $timeZoneService->convertFromTimezone(Carbon::parse($this->from), auth()->user()->timezone);
-        $this->to = $timeZoneService->convertFromTimezone(Carbon::parse($this->to), auth()->user()->timezone);
+        $from = $timeZoneService->convertFromTimezone(Carbon::parse($this->from), auth()->user()->timezone);
+        $to = $timeZoneService->convertFromTimezone(Carbon::parse($this->to), auth()->user()->timezone);
 
-        $format = "H:i";
+        $format = 'H:i';
         if ($this->type == SlotType::once) {
             $format = 'Y-m-d H:i';
         }
@@ -28,8 +28,8 @@ class AvailabilityManagementResource extends JsonResource
             'id' => $this->id,
             'type' => $this->type,
             'week_day' => $this->week_day,
-            'from' => $this->from->format($format),
-            'to' => $this->to->format($format),
+            'from' => $from->format($format),
+            'to' => $to->format($format),
             'status' => $this->status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

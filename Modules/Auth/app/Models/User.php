@@ -71,4 +71,19 @@ class User extends Authenticatable
     {
         return UserFactory::new();
     }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === Roles::ADMIN;
+    }
+
+    public function isProvider(): bool
+    {
+        return $this->role === Roles::PROVIDER;
+    }
+
+    public function isUser(): bool
+    {
+        return $this->role === Roles::USER;
+    }
 }

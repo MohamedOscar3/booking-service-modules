@@ -62,6 +62,22 @@ return [
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
+        'mysql_testing' => [
+            'driver' => 'mysql',
+            'host' => env('DB_TEST_HOST', 'mysql_test'),
+            'port' => env('DB_TEST_PORT', '3306'),
+            'database' => env('DB_TEST_DATABASE', 'service_booking_test'),
+            'username' => env('DB_TEST_USERNAME', 'service_booking_test'),
+            'password' => env('DB_TEST_PASSWORD', 'secret'),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+            'options' => [
+                PDO::ATTR_TIMEOUT => 30,
+            ],
+        ],
 
         'mariadb' => [
             'driver' => 'mariadb',

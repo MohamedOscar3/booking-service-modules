@@ -31,3 +31,5 @@ docs/api
 /build
 /public/vendor/scribe
 /resources/views/scribe
+/public/developer-docs/php
+/public/docs

@@ -17,38 +17,46 @@ class BookingPolicy
 
     public function view(User $user, Booking $booking): bool
     {
-        // Users can view their own bookings or bookings for services they provide
-        return $user->id === $booking->user_id ||
+        // Users can view their own bookings or bookings for services they provide, or admins can view all
+        return $user->isAdmin() ||
+               $user->id === $booking->user_id ||
                $user->id === $booking->service->provider_id;
     }
 
     public function create(User $user): bool
     {
-        return true; // Any authenticated user can create bookings
+        // Only users with client role (USER) can create bookings
+        return $user->isUser();
     }
 
     public function update(User $user, Booking $booking): bool
     {
-        // Only the service provider can update bookings
-        return $user->id === $booking->service->provider_id;
+        // Customer can update their own bookings (limited fields via UpdateBookingRequest)
+        // Provider can update bookings for their services
+        // Admin can update any booking
+        return $user->isAdmin() ||
+               $user->id === $booking->user_id ||
+               $user->id === $booking->service->provider_id;
     }
 
     public function delete(User $user, Booking $booking): bool
     {
-        // Both customer and provider can cancel/delete bookings
-        return $user->id === $booking->user_id ||
+        // Both customer and provider can cancel/delete bookings, or admin
+        return $user->isAdmin() ||
+               $user->id === $booking->user_id ||
                $user->id === $booking->service->provider_id;
     }
 
     public function restore(User $user, Booking $booking): bool
     {
-        // Only the service provider can restore bookings
-        return $user->id === $booking->service->provider_id;
+        // Only the service provider or admin can restore bookings
+        return $user->isAdmin() ||
+               $user->id === $booking->service->provider_id;
     }
 
     public function forceDelete(User $user, Booking $booking): bool
     {
-        // Only the service provider can force delete bookings
-        return $user->id === $booking->service->provider_id;
+        // Only admin can force delete bookings
+        return $user->isAdmin();
     }
 }
