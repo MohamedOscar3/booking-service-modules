@@ -4,9 +4,9 @@ namespace Modules\Category\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\ApiResponseService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Knuckles\Scribe\Attributes\Group;
 use Modules\Category\DTOs\CategoryDTO;
 use Modules\Category\Http\Requests\StoreCategoryRequest;
@@ -25,6 +25,8 @@ use Modules\Category\Services\CategoryService;
 #[Group('Categories')]
 class CategoryController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Display a listing of categories
      *
@@ -33,6 +35,10 @@ class CategoryController extends Controller
      * @api {get} /api/categories Get all categories
      *
      * @apiName GetCategories
+     *
+     * @queryParam page integer Page number for pagination. Example: 1
+     * @queryParam per_page integer Number of items per page. Example: 15
+     * @queryParam q string Filter by category name. Example: Technology
      *
      * @response 200 {
      *     "data": [
@@ -52,6 +58,8 @@ class CategoryController extends Controller
      */
     public function index(CategoryService $categoryService, ApiResponseService $apiResponseService, Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Category::class);
+
         $categories = $categoryService->getAllCategories($request);
 
         return $apiResponseService->pagination(
@@ -99,6 +107,7 @@ class CategoryController extends Controller
         ApiResponseService $apiResponseService,
         CategoryService $categoryService
     ): JsonResponse {
+        $this->authorize('create', Category::class);
 
         try {
             $categoryDTO = new CategoryDTO(
@@ -121,11 +130,7 @@ class CategoryController extends Controller
      *
      * @group Categories
      *
-     * @api {get} /api/categories/{id} Get a specific category
-     *
      * @apiName GetCategory
-     *
-     * @urlParam id integer required The category ID. Example: 1
      *
      * @response 200 {
      *     "data": {
@@ -149,10 +154,7 @@ class CategoryController extends Controller
         ApiResponseService $apiResponseService,
         CategoryService $categoryService
     ): JsonResponse {
-        // Ensure user can only access their own categories
-        if ($category->last_updated_by !== Auth::id()) {
-            return $apiResponseService->failedResponse('Category not found', 404);
-        }
+        $this->authorize('view', $category);
 
         $category = $categoryService->getCategoryById($category);
 
@@ -168,11 +170,7 @@ class CategoryController extends Controller
      *
      * @group Categories
      *
-     * @api {put} /api/categories/{id} Update a category
-     *
      * @apiName UpdateCategory
-     *
-     * @urlParam id integer required The category ID. Example: 1
      * @bodyParam name string required The category name. Must not exceed 255 characters. Example: Updated Technology
      * @bodyParam _method string required The HTTP method. Example: PUT
      * @response 200 {
@@ -206,6 +204,8 @@ class CategoryController extends Controller
         ApiResponseService $apiResponseService,
         CategoryService $categoryService
     ): JsonResponse {
+        $this->authorize('update', $category);
+
         try {
             $categoryDTO = new CategoryDTO(
                 name: $request->validated()['name']
@@ -232,8 +232,6 @@ class CategoryController extends Controller
      *
      * @apiName DeleteCategory
      *
-     * @urlParam id integer required The category ID. Example: 1
-     *
      * @bodyParam _method string required The HTTP method. Example: DELETE
      *
      * @response 200 {
@@ -252,6 +250,8 @@ class CategoryController extends Controller
         ApiResponseService $apiResponseService,
         CategoryService $categoryService
     ): JsonResponse {
+        $this->authorize('delete', $category);
+
         try {
             $categoryService->deleteCategory($category);
 

@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: service_booking_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      - ./docker/supervisor/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
+    networks:
+      - service_booking_network
+    depends_on:
+      - mysql
+      - redis
+
+  nginx:
+    image: nginx:alpine
+    container_name: service_booking_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./docker/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+    networks:
+      - service_booking_network
+    depends_on:
+      - app
+
+  mysql:
+    image: mysql:8.0
+    container_name: service_booking_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: ${DB_DATABASE:-service_booking}
+      MYSQL_USER: ${DB_USERNAME:-service_booking}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3308:3306"
+    networks:
+      - service_booking_network
+    command: --default-authentication-plugin=mysql_native_password
+
+  redis:
+    image: redis:alpine
+    container_name: service_booking_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - service_booking_network
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: service_booking_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - service_booking_network
+
+  mysql_test:
+    image: mysql:8.0
+    container_name: service_booking_mysql_test
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_TEST_DATABASE:-service_booking_test}
+      MYSQL_ROOT_PASSWORD: ${DB_TEST_PASSWORD:-secret}
+      MYSQL_PASSWORD: ${DB_TEST_PASSWORD:-secret}
+      MYSQL_USER: ${DB_TEST_USERNAME:-service_booking_test}
+    volumes:
+      - mysql_test_data:/var/lib/mysql
+      - ./docker/mysql/init-test.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3307:3306"
+    networks:
+      - service_booking_network
+    command: --default-authentication-plugin=mysql_native_password
+
+networks:
+  service_booking_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  mysql_test_data:
+    driver: local

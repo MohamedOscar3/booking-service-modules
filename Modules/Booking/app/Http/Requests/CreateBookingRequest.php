@@ -54,8 +54,8 @@ class CreateBookingRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $this->validateAvailability($validator);
             $this->validateBusinessRules($validator);
+            $this->validateAvailability($validator);
         });
     }
 
@@ -101,6 +101,16 @@ class CreateBookingRequest extends FormRequest
             return;
         }
 
+        $serviceId = $this->input('service_id');
+        $service = \Modules\Service\Models\Service::find($serviceId);
+
+        // Prevent users from booking their own services
+        if ($service && $service->provider_id === auth()->id()) {
+            $validator->errors()->add('service_id', 'You cannot book your own service.');
+
+            return;
+        }
+
         $date = $this->input('date');
         $time = $this->input('time');
         $timezone = $this->input('timezone', 'UTC');
@@ -113,7 +123,7 @@ class CreateBookingRequest extends FormRequest
         }
 
         // Ensure booking is not too far in the future (optional business rule)
-        $maxAdvanceBooking = Carbon::now($timezone)->addMonths(6);
+        $maxAdvanceBooking = Carbon::now($timezone)->addMonths(6)->addDays(1);
         if ($dateTime->gt($maxAdvanceBooking)) {
             $validator->errors()->add('date', 'Cannot book more than 6 months in advance.');
         }
@@ -142,7 +152,7 @@ class CreateBookingRequest extends FormRequest
             'price' => $service->price,
             'date' => $dateTime->utc(),
             'time' => $validated['time'],
-            'status' => BookingStatusEnum::PENDING,
+            'status' => BookingStatusEnum::PENDING->value,
             'customer_notes' => $validated['customer_notes'] ?? null,
             'slot_id' => $slotId,
         ];

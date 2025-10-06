@@ -37,6 +37,8 @@ class RegisterController
      *
      * @api {post} /api/auth/register Register a new user
      *
+     * @unauthenticated
+     *
      * @apiName RegisterUser
      *
      * @bodyParam name string required User name. Example: John Doe

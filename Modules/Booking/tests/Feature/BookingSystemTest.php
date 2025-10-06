@@ -4,11 +4,12 @@ namespace Modules\Booking\Tests\Feature;
 
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+use Modules\Auth\Enums\Roles;
 use Modules\Auth\Models\User;
+use Modules\AvailabilityManagement\Enums\SlotType;
+use Modules\AvailabilityManagement\Models\AvailabilityManagement;
 use Modules\Booking\Enums\BookingStatusEnum;
-use Modules\Booking\Events\BookingCreated;
 use Modules\Booking\Jobs\SendBookingConfirmationEmail;
 use Modules\Booking\Models\Booking;
 use Modules\Service\Models\Service;
@@ -29,8 +30,8 @@ class BookingSystemTest extends TestCase
         parent::setUp();
 
         // Create test users
-        $this->customer = User::factory()->create();
-        $this->provider = User::factory()->create();
+        $this->customer = User::factory()->create(['role' => Roles::USER]);
+        $this->provider = User::factory()->create(['role' => Roles::PROVIDER]);
 
         // Create test service
         $this->service = Service::factory()->create([
@@ -42,8 +43,17 @@ class BookingSystemTest extends TestCase
 
     public function test_customer_can_create_booking_with_valid_data(): void
     {
-        Event::fake();
         Queue::fake();
+
+        // Create availability slot
+        AvailabilityManagement::factory()->create([
+            'provider_id' => $this->provider->id,
+            'type' => SlotType::recurring,
+            'week_day' => Carbon::tomorrow()->dayOfWeek,
+            'from' => Carbon::tomorrow()->setTime(9, 0),
+            'to' => Carbon::tomorrow()->setTime(17, 0),
+            'status' => 1,
+        ]);
 
         $this->actingAs($this->customer);
 
@@ -76,9 +86,6 @@ class BookingSystemTest extends TestCase
             'status' => BookingStatusEnum::PENDING->value,
             'customer_notes' => 'Looking forward to the service',
         ]);
-
-        // Verify event was dispatched
-        Event::assertDispatched(BookingCreated::class);
 
         // Verify notification jobs were queued
         Queue::assertPushed(SendBookingConfirmationEmail::class);

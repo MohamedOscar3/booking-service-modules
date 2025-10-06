@@ -212,7 +212,7 @@ class BookingConstraintsTest extends TestCase
             'service_id' => $longService->id,
             'provider_id' => $this->provider->id,
             'date' => $testDate->copy()->setTime(14, 0),
-            'status' => BookingStatusEnum::CONFIRMED,
+            'status' => BookingStatusEnum::CONFIRMED->value,
         ]);
 
         $this->actingAs($this->client);

@@ -28,6 +28,7 @@ use Modules\AvailabilityManagement\Services\AvailabilityManagementService;
 class AvailabilityManagementController extends Controller
 {
     use AuthorizesRequests;
+
     /**
      * Display a listing of availability slots
      *
@@ -462,7 +463,7 @@ class AvailabilityManagementController extends Controller
      *
      * @apiName GetAvailableSlotsForDate
      *
-     * @urlParam date string required The date (YYYY-MM-DD). Example: "2025-09-26"
+     * @urlParam date string required The date (HH:ii). Example: "17:00"
      * @queryParam provider_id integer Filter by provider ID. Example: 1
      * @queryParam page integer Current page. Example: 1
      */

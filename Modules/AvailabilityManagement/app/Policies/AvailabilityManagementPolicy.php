@@ -3,7 +3,6 @@
 namespace Modules\AvailabilityManagement\Policies;
 
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Modules\Auth\Enums\Roles;
 use Modules\Auth\Models\User;
 use Modules\AvailabilityManagement\Models\AvailabilityManagement;
 
@@ -24,7 +23,7 @@ class AvailabilityManagementPolicy
      */
     public function view(User $user, AvailabilityManagement $availabilityManagement): bool
     {
-        return true; // All authenticated users can view individual availability slots
+        return $user->isAdmin() || $user->id === $availabilityManagement->provider_id; // All authenticated users can view individual availability slots
     }
 
     /**
@@ -33,7 +32,7 @@ class AvailabilityManagementPolicy
     public function create(User $user): bool
     {
         // Only admin and provider can create availability slots
-        return $user->role === Roles::ADMIN || $user->role === Roles::PROVIDER;
+        return $user->isAdmin() || $user->isProvider();
     }
 
     /**
@@ -42,8 +41,8 @@ class AvailabilityManagementPolicy
     public function update(User $user, AvailabilityManagement $availabilityManagement): bool
     {
         // Admin can update any availability slot, providers can only update their own slots
-        return $user->role === Roles::ADMIN ||
-               ($user->role === Roles::PROVIDER && $user->id === $availabilityManagement->provider_id);
+        return $user->isAdmin() ||
+               ($user->isProvider() && $user->id === $availabilityManagement->provider_id);
     }
 
     /**
@@ -52,8 +51,8 @@ class AvailabilityManagementPolicy
     public function delete(User $user, AvailabilityManagement $availabilityManagement): bool
     {
         // Admin can delete any availability slot, providers can only delete their own slots
-        return $user->role === Roles::ADMIN ||
-               ($user->role === Roles::PROVIDER && $user->id === $availabilityManagement->provider_id);
+        return $user->isAdmin() ||
+               ($user->isProvider() && $user->id === $availabilityManagement->provider_id);
     }
 
     /**
@@ -62,8 +61,8 @@ class AvailabilityManagementPolicy
     public function restore(User $user, AvailabilityManagement $availabilityManagement): bool
     {
         // Admin can restore any availability slot, providers can only restore their own slots
-        return $user->role === Roles::ADMIN ||
-               ($user->role === Roles::PROVIDER && $user->id === $availabilityManagement->provider_id);
+        return $user->isAdmin() ||
+               ($user->isProvider() && $user->id === $availabilityManagement->provider_id);
     }
 
     /**
@@ -72,6 +71,6 @@ class AvailabilityManagementPolicy
     public function forceDelete(User $user, AvailabilityManagement $availabilityManagement): bool
     {
         // Only admin can force delete availability slots
-        return $user->role === Roles::ADMIN;
+        return $user->isAdmin();
     }
 }

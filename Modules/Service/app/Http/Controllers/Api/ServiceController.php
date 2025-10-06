@@ -4,6 +4,7 @@ namespace Modules\Service\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\ApiResponseService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Knuckles\Scribe\Attributes\Group;
@@ -26,6 +27,8 @@ use Modules\Service\Services\ServiceService;
 #[Group('Services')]
 class ServiceController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Display a listing of services
      *
@@ -35,11 +38,12 @@ class ServiceController extends Controller
      *
      * @apiName GetServices
      *
-     * @queryParam q string Filter by service name or description. Example: "cleaning"
+     * @queryParam q string Filter by service name or description. Example: cleaning
      * @queryParam provider_id integer Filter by provider ID. Example: 1
      * @queryParam category_id integer Filter by category ID. Example: 1
      * @queryParam status boolean Filter by status. Example: true
-     * @queryParam page integer Current page. Example: 1
+     * @queryParam page integer Page number for pagination. Example: 1
+     * @queryParam per_page integer Number of items per page. Example: 15
      *
      * @response 200 {
      *     "data": [
@@ -75,6 +79,8 @@ class ServiceController extends Controller
         ApiResponseService $apiResponseService,
         Request $request
     ): JsonResponse {
+        $this->authorize('viewAny', Service::class);
+
         $services = $serviceService->getAllServices($request);
 
         return $apiResponseService->pagination(
@@ -140,6 +146,8 @@ class ServiceController extends Controller
         ApiResponseService $apiResponseService,
         ServiceService $serviceService
     ): JsonResponse {
+        $this->authorize('create', Service::class);
+
         try {
             $serviceDto = new CreateServiceDto(
                 name: $request->validated()['name'],
@@ -209,6 +217,7 @@ class ServiceController extends Controller
         ServiceService $serviceService,
         Request $request
     ): JsonResponse {
+        $this->authorize('view', $service);
         $service = $serviceService->getServiceById($service);
         $availabilityService = app(SlotService::class);
 
@@ -285,6 +294,7 @@ class ServiceController extends Controller
         ApiResponseService $apiResponseService,
         ServiceService $serviceService
     ): JsonResponse {
+        $this->authorize('update', $service);
         try {
             $validated = $request->validated();
 
@@ -338,6 +348,8 @@ class ServiceController extends Controller
         ApiResponseService $apiResponseService,
         ServiceService $serviceService
     ): JsonResponse {
+        $this->authorize('delete', $service);
+
         try {
             $serviceService->deleteService($service);
 

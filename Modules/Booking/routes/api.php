@@ -29,6 +29,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // Admin reporting endpoints (admin only)
     Route::prefix('admin/reports')->name('admin.reports.')->group(function () {
+        // Report data endpoints
         Route::get('bookings/per-provider', [AdminReportController::class, 'totalBookingsPerProvider'])
             ->name('bookings.per-provider');
         Route::get('services/rates', [AdminReportController::class, 'cancelledVsConfirmedRatePerService'])
@@ -38,25 +39,15 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
         Route::get('customers/duration-analysis', [AdminReportController::class, 'averageBookingDurationPerCustomer'])
             ->name('customers.duration-analysis');
 
-        // Excel export endpoints
-        Route::get('export/bookings/per-provider', [AdminReportController::class, 'exportTotalBookingsPerProvider'])
+        // Excel export endpoints (queued)
+        Route::post('export/bookings/per-provider', [AdminReportController::class, 'queueProviderBookingsExport'])
             ->name('export.bookings.per-provider');
-        Route::get('export/services/rates', [AdminReportController::class, 'exportCancelledVsConfirmedRatePerService'])
+        Route::post('export/services/rates', [AdminReportController::class, 'queueServiceBookingRatesExport'])
             ->name('export.services.rates');
-        Route::get('export/bookings/peak-hours', [AdminReportController::class, 'exportPeakHoursByDayWeek'])
+        Route::post('export/bookings/peak-hours', [AdminReportController::class, 'queuePeakHoursExport'])
             ->name('export.bookings.peak-hours');
-        Route::get('export/customers/duration-analysis', [AdminReportController::class, 'exportAverageBookingDurationPerCustomer'])
+        Route::post('export/customers/duration-analysis', [AdminReportController::class, 'queueCustomerBookingDurationExport'])
             ->name('export.customers.duration-analysis');
-
-        // Queued Excel export endpoints
-        Route::post('queue-export/bookings/per-provider', [AdminReportController::class, 'queueProviderBookingsExport'])
-            ->name('queue-export.bookings.per-provider');
-        Route::post('queue-export/services/rates', [AdminReportController::class, 'queueServiceBookingRatesExport'])
-            ->name('queue-export.services.rates');
-        Route::post('queue-export/bookings/peak-hours', [AdminReportController::class, 'queuePeakHoursExport'])
-            ->name('queue-export.bookings.peak-hours');
-        Route::post('queue-export/customers/duration-analysis', [AdminReportController::class, 'queueCustomerBookingDurationExport'])
-            ->name('queue-export.customers.duration-analysis');
 
         // Download endpoint for queued reports
         Route::get('download/{filename}', [AdminReportDownloadController::class, 'download'])

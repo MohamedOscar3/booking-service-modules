@@ -63,6 +63,7 @@ return [
             // Exclude these routes even if they matched the rules above.
             'exclude' => [
                 // 'GET /health', 'admin.*'
+                'GET /api/v1/bookings/availability', // Defined in custom.0.yaml to prevent body param extraction
             ],
         ],
     ],

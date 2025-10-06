@@ -19,8 +19,8 @@ class UpdateAvailabilityManagementRequest extends FormRequest
     {
         return [
             'type' => ['sometimes', 'string', 'in:'.implode(',', array_column(SlotType::cases(), 'value'))],
-            'week_day' => ['required_if:type,recurring', 'nullable','integer', 'min:0', 'max:6'],
-            'from' => ['sometimes', ],
+            'week_day' => ['required_if:type,recurring', 'nullable', 'integer', 'min:0', 'max:6'],
+            'from' => ['sometimes'],
             'to' => ['sometimes', 'after:from'],
 
             'status' => ['sometimes', 'boolean'],
@@ -55,5 +55,34 @@ class UpdateAvailabilityManagementRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Get the body parameters for the API documentation.
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'type' => [
+                'description' => 'Slot type. Must be either "recurring" for weekly recurring slots or "once" for one-time slots',
+                'example' => 'once',
+            ],
+            'week_day' => [
+                'description' => 'Day of the week (0-6, where 0=Sunday, 6=Saturday). Required for recurring slots',
+                'example' => 2,
+            ],
+            'from' => [
+                'description' => 'Start time in HH:MM format or datetime',
+                'example' => '10:00',
+            ],
+            'to' => [
+                'description' => 'End time in HH:MM format or datetime. Must be after start time',
+                'example' => '18:00',
+            ],
+            'status' => [
+                'description' => 'Slot active status. True for active, false for inactive',
+                'example' => false,
+            ],
+        ];
     }
 }

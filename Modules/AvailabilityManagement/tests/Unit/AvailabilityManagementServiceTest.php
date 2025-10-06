@@ -22,7 +22,9 @@ class AvailabilityManagementServiceTest extends TestCase
     use RefreshDatabase, WithFaker;
 
     private AvailabilityManagementService $availabilityService;
+
     private User $provider;
+
     private User $admin;
 
     protected function setUp(): void
@@ -44,7 +46,7 @@ class AvailabilityManagementServiceTest extends TestCase
 
         AvailabilityManagement::factory()->count(3)->create(['provider_id' => $this->provider->id]);
 
-        $request = new Request();
+        $request = new Request;
         $result = $this->availabilityService->getAllAvailabilitySlots($request);
 
         $this->assertNotNull($result);
@@ -59,7 +61,7 @@ class AvailabilityManagementServiceTest extends TestCase
         AvailabilityManagement::factory()->count(3)->create(['provider_id' => $this->provider->id]);
         AvailabilityManagement::factory()->count(2)->create(); // Other provider's slots
 
-        $request = new Request();
+        $request = new Request;
         $result = $this->availabilityService->getAllAvailabilitySlots($request);
 
         $this->assertEquals(3, $result->count()); // Should only see own slots
@@ -71,7 +73,7 @@ class AvailabilityManagementServiceTest extends TestCase
 
         AvailabilityManagement::factory()->count(5)->create();
 
-        $request = new Request();
+        $request = new Request;
         $result = $this->availabilityService->getAllAvailabilitySlots($request);
 
         $this->assertEquals(5, $result->count()); // Admin should see all slots
@@ -166,7 +168,7 @@ class AvailabilityManagementServiceTest extends TestCase
 
         AvailabilityManagement::factory()->create(['provider_id' => $this->provider->id]);
 
-        $request = new Request();
+        $request = new Request;
         $result = $this->availabilityService->getAllAvailabilitySlots($request);
 
         $availability = $result->first();
@@ -384,7 +386,7 @@ class AvailabilityManagementServiceTest extends TestCase
         AvailabilityManagement::factory()->count(3)->create(['provider_id' => $this->provider->id]);
         AvailabilityManagement::factory()->count(2)->create(['provider_id' => $otherProvider->id]);
 
-        $request = new Request();
+        $request = new Request;
         $result = $this->availabilityService->getAvailabilitySlotsByProvider($this->provider->id, $request);
 
         $this->assertEquals(3, $result->total());
@@ -432,7 +434,7 @@ class AvailabilityManagementServiceTest extends TestCase
             'status' => true,
         ]);
 
-        $result = $this->availabilityService->getAvailableSlotsForDate('09:00');
+        $result = $this->availabilityService->getAvailableSlotsForDate('9:00');
 
         $this->assertEquals(1, $result->total()); // Only one active slot matching the time
         $this->assertTrue($result->first()->status);
@@ -473,7 +475,7 @@ class AvailabilityManagementServiceTest extends TestCase
             'type' => SlotType::once,
         ]);
 
-        $request = new Request();
+        $request = new Request;
         $result = $this->availabilityService->getRecurringAvailability($this->provider->id, $request);
 
         $this->assertEquals(1, $result->total());

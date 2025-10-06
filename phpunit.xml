@@ -7,28 +7,42 @@
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
+            <directory>modules/AvailabilityManagement/tests/Unit</directory>
+            <directory>modules/Booking/tests/Unit</directory>
+            <directory>modules/Category/tests/Unit</directory>
+            <directory>modules/Service/tests/Unit</directory>
+            <directory>modules/Auth/tests/Unit</directory>
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
-            <directory>modules/*/tests/Feature</directory>
+            <directory>modules/AvailabilityManagement/tests/Feature</directory>
+            <directory>modules/Booking/tests/Feature</directory>
+            <directory>modules/Category/tests/Feature</directory>
+            <directory>modules/Service/tests/Feature</directory>
+            <directory>modules/Auth/tests/Feature</directory>
+
         </testsuite>
     </testsuites>
     <source>
         <include>
             <directory>app</directory>
-            <directory>modules/*/app</directory>
+            <directory>modules/AvailabilityManagement/app</directory>
+            <directory>modules/Booking/app</directory>
+            <directory>modules/Category/app</directory>
+            <directory>modules/ServiceManagement/app</directory>
+            <directory>modules/Auth/app</directory>
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
+        <env name="APP_ENV" value="local"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="APP_DEBUG" value="true"/>
+        <env name="APP_URL" value="http://nginx:80" />
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-
+        <env name="DB_CONNECTION" value="mysql_testing"/>
         <env name="MAIL_MAILER" value="array"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
+
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

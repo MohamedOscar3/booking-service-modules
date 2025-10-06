@@ -77,7 +77,7 @@
         <p>Hello {{ $user->name }},</p>
 
         @if($isSuccess)
-            <p>Your <strong>{{ $exportDisplayName }}</strong> has been successfully generated and is ready for download.</p>
+            <p>Your <strong>{{ $exportDisplayName }}</strong> has been successfully generated and is attached to this email.</p>
 
             <div class="download-section">
                 <h3>📋 Export Details</h3>
@@ -87,15 +87,12 @@
                     <li><strong>Generated:</strong> {{ now()->format('F j, Y \a\t g:i A') }}</li>
                 </ul>
 
-                @if($downloadUrl)
-                    <p><strong>⬇️ Download your report:</strong></p>
-                    <a href="{{ $downloadUrl }}" class="btn">Download Excel File</a>
-                @endif
+                <p><strong>📎 The Excel file is attached to this email.</strong></p>
             </div>
 
             <div style="background-color: #fef3c7; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b;">
-                <p><strong>🔒 Security Notice:</strong></p>
-                <p>This download link is protected and only accessible to administrators. The file will be automatically deleted after 7 days for security purposes.</p>
+                <p><strong>💡 Tip:</strong></p>
+                <p>Please download and save the attached file. The report contains all the data you requested based on your selected filters.</p>
             </div>
         @else
             <p>Unfortunately, your <strong>{{ $exportDisplayName }}</strong> could not be generated due to an error.</p>

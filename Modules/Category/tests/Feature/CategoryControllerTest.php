@@ -5,6 +5,7 @@ namespace Modules\Category\Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Laravel\Sanctum\Sanctum;
+use Modules\Auth\Enums\Roles;
 use Modules\Auth\Models\User;
 use Modules\Category\Models\Category;
 use Tests\TestCase;
@@ -15,11 +16,14 @@ class CategoryControllerTest extends TestCase
 
     private User $user;
 
+    private User $admin;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user = User::factory()->create();
+        $this->user = User::factory()->create(['role' => Roles::USER]);
+        $this->admin = User::factory()->create(['role' => Roles::ADMIN]);
         Sanctum::actingAs($this->user, ['*']);
     }
 
@@ -61,6 +65,8 @@ class CategoryControllerTest extends TestCase
 
     public function test_can_create_category(): void
     {
+        Sanctum::actingAs($this->admin, ['*']);
+
         $categoryData = [
             'name' => 'New Technology Category',
         ];
@@ -87,7 +93,7 @@ class CategoryControllerTest extends TestCase
 
         $this->assertDatabaseHas('categories', [
             'name' => 'New Technology Category',
-            'last_updated_by' => $this->user->id,
+            'last_updated_by' => $this->admin->id,
         ]);
     }
 
@@ -141,7 +147,9 @@ class CategoryControllerTest extends TestCase
 
     public function test_can_update_category(): void
     {
-        $category = Category::factory()->create(['last_updated_by' => $this->user->id]);
+        Sanctum::actingAs($this->admin, ['*']);
+
+        $category = Category::factory()->create(['last_updated_by' => $this->admin->id]);
 
         $updateData = [
             'name' => 'Updated Category Name',
@@ -170,7 +178,7 @@ class CategoryControllerTest extends TestCase
         $this->assertDatabaseHas('categories', [
             'id' => $category->id,
             'name' => 'Updated Category Name',
-            'last_updated_by' => $this->user->id,
+            'last_updated_by' => $this->admin->id,
         ]);
     }
 
@@ -188,7 +196,9 @@ class CategoryControllerTest extends TestCase
 
     public function test_can_delete_category(): void
     {
-        $category = Category::factory()->create(['last_updated_by' => $this->user->id]);
+        Sanctum::actingAs($this->admin, ['*']);
+
+        $category = Category::factory()->create(['last_updated_by' => $this->admin->id]);
 
         $response = $this->deleteJson("/api/categories/{$category->id}");
 

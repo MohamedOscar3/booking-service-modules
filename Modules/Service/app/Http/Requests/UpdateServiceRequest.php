@@ -74,4 +74,37 @@ class UpdateServiceRequest extends FormRequest
     {
         return true;
     }
+
+    /**
+     * Get the body parameters for the API documentation.
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'name' => [
+                'description' => 'Service name. Must be unique for the provider. Maximum 255 characters',
+                'example' => 'Updated Hair Cut & Style',
+            ],
+            'description' => [
+                'description' => 'Detailed description of the service',
+                'example' => 'Updated professional hair cutting and styling service',
+            ],
+            'duration' => [
+                'description' => 'Service duration in minutes. Must be at least 1 minute',
+                'example' => 90,
+            ],
+            'price' => [
+                'description' => 'Service price in the base currency. Must be non-negative',
+                'example' => 35.00,
+            ],
+            'category_id' => [
+                'description' => 'ID of the category this service belongs to. Must exist in categories table',
+                'example' => 2,
+            ],
+            'status' => [
+                'description' => 'Service active status. True for active, false for inactive',
+                'example' => false,
+            ],
+        ];
+    }
 }

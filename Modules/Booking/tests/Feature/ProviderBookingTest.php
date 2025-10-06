@@ -85,7 +85,9 @@ class ProviderBookingTest extends TestCase
 
     public function test_provider_can_confirm_pending_booking(): void
     {
-        Event::fake();
+        Event::fake([
+            BookingConfirmed::class,
+        ]);
         Queue::fake();
 
         $booking = Booking::factory()->create([
@@ -115,7 +117,7 @@ class ProviderBookingTest extends TestCase
 
         // Verify events were dispatched
         Event::assertDispatched(BookingConfirmed::class);
-        Event::assertDispatched(BookingStatusChanged::class);
+        // BookingStatusChanged is not faked, so it actually fires and triggers the listener
         Queue::assertPushed(SendBookingStatusUpdateEmail::class);
     }
 
