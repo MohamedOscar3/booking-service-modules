@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Install Redis extension
 RUN pecl install redis && docker-php-ext-enable redis
@@ -36,6 +36,9 @@ COPY . /var/www
 
 # Copy existing application directory permissions
 COPY --chown=www-data:www-data . /var/www
+
+# Install composer dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Create required directories
 RUN mkdir -p /var/www/storage/logs \
